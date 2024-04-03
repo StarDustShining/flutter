@@ -2,11 +2,9 @@ library intro;
 
 export 'src/intro_base.dart';
 // Importing core libraries
-import 'dart:html';
-import 'dart:math';
-
-// Importing libraries from external packages
-import 'package:test/test.dart';
+export 'dart:html';
+import 'dart:io';
+export 'dart:math';
 
 // Importing files
 //import '/workspace/flutter/lib/main.dart';
@@ -51,14 +49,32 @@ mixin Piloted {
 
   void describeCrew() {
     print('Number of astronauts: $astronauts');
+    if (astronauts == 0) {
+      throw StateError('No astronauts.');
+    }
   }
 }
 
 class PilotedCraft extends Spacecraft with Piloted {
+  PilotedCraft(super.name, super.launchDate);
   //...
 }
 
 class MockSpaceship implements Spacecraft {
+  @override
+  DateTime? launchDate;
+
+  @override
+  late String name;
+
+  @override
+  void describe() {
+    // TODO: implement describe
+  }
+
+  @override
+  // TODO: implement launchYear
+  int? get launchYear => throw UnimplementedError();
   //...
 }
 
@@ -79,26 +95,56 @@ Future<void> printWithDelay(String message) async {
   print(message);
 }
 
-Future<void> printWithDelay(String message) {
-  return Future.delayed(oneSecond).then((_) {
-    print(message);
-  });
-}
+// 上述方法相当于：
+// Future<void> printWithDelay(String message) {
+//   return Future.delayed(oneSecond).then((_) {
+//     print(message);
+//   });
+// }
 
 Future<void> createDescriptions(Iterable<String> objects) async {
   for (final object in objects) {
-    try{
-      var file = File()
+    try {
+      var file = File('$object.txt');
+      if (await file.exists()) {
+        var modified = await file.lastModified();
+        print('File for $object already exists. It was modified on $modified.');
+        continue;
+      }
+      await file.create();
+      await file.writeAsString('Start describing $object in this file.');
+    } on IOException catch (e) {
+      print('Cannot create description for $object:$e');
     }
-  } 
+  }
+}
+
+Future<void> describeFlybyObjects(List<String> flybyObjects) async {
+  try {
+    for (final object in flybyObjects) {
+      var description = await File('$object.txt').readAsString();
+      print(description);
+    }
+  } on IOException catch (e) {
+    print('Could not describe object: $e');
+  } finally {
+    flybyObjects.clear();
+  }
+}
+
+Stream<String> report(Spacecraft craft, Iterable<String> objects) async* {
+  for (final object in objects) {
+    await Future.delayed(oneSecond);
+    yield '${craft.name} files by $object';
+  }
 }
 
 enum PlanetType { terrsetrial, gas, ice }
 
 enum Planet {
-  mercury(planetType: PlanetType.terrestrial, moons: 0, hasRings: false),
-  venus(planetType: PlanetType.terrestrial, moons: 0, hasRings: false),
-  // ···
+  // mercury(planetType: PlanetType.terrestrial, moons: 0, hasRings: false),
+  // venus(planetType: PlanetType.terrestrial, moons: 0, hasRings: false),
+  earth(planetType: PlanetType.terrsetrial, moons: 1, hasRings: false),
   uranus(planetType: PlanetType.ice, moons: 27, hasRings: true),
   neptune(planetType: PlanetType.ice, moons: 14, hasRings: true);
 
